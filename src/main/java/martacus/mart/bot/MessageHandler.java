@@ -42,7 +42,10 @@ public class MessageHandler {
 			int i = str.randomNumber(str.dwi);
 			sendMessage(str.dwi[i], event);
 		}
-		if(m.getContent().startsWith("[attack")){
+		if(m.getContent().startsWith("[oppai")){
+			sendMessage("They are filled with men's hopes and dreams.", event);
+		}
+		if(m.getContent().startsWith("[duel")){
 			String[] messagesplit = message.split(" ");
 			int i = str.rand(2);
 			String sender = m.getAuthor().toString();

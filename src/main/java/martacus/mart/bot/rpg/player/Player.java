@@ -1,4 +1,4 @@
-package martacus.mart.bot.rpg;
+package martacus.mart.bot.rpg.player;
 
 
 public class Player {

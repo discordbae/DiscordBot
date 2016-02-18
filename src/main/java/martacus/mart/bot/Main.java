@@ -7,11 +7,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
-import martacus.mart.bot.rpg.FightingHandler;
-import martacus.mart.bot.rpg.InventoryHandler;
-import martacus.mart.bot.rpg.ItemMessageHandler;
-import martacus.mart.bot.rpg.PlayerMessageHandler;
+import martacus.mart.bot.rpg.fightsystem.FightingHandler;
+import martacus.mart.bot.rpg.player.InventoryHandler;
+import martacus.mart.bot.rpg.player.ItemMessageHandler;
+import martacus.mart.bot.rpg.player.PlayerMessageHandler;
 import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.http.UserAgent;
 import net.dean.jraw.http.oauth.OAuthException;
@@ -30,8 +31,6 @@ public class Main {
 	public static IDiscordClient pub;
 	public static Connection conn = null;
 	static UserAgent myUserAgent = UserAgent.of("desktop", "martacus.mart.bot", "v0.1", "Martacus");
-	
-	
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws DiscordException, NetworkException, OAuthException, SQLException, IOException{
@@ -64,13 +63,23 @@ public class Main {
 	public static void connect() throws SQLException{
 		conn = DriverManager.getConnection("jdbc:mysql://localhost/discordrpg?user=root&password=");
 		Statement state = conn.createStatement();
+		//Player table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS players(ID varchar(255), level int, exp double, PRIMARY KEY(ID))");	
+		//Inventory table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS inventory(playerID varchar(255), itemID int(11) , "
-				+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(itemID) references items(ID))");	
-		state.executeUpdate("CREATE TABLE IF NOT EXISTS body(ID int(11) AUTO_INCREMENT,playerID varchar(255), headID int(11) ,chestID int(11) ,pantsID int(11) ,"
-				+ "bootsID int(11), weaponID int(11) , FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(headID) references items(ID)"
-				+ ", FOREIGN KEY(chestID) references items(ID), FOREIGN KEY(pantsID) references items(ID)"
-				+ ", FOREIGN KEY(bootsID) references items(ID), PRIMARY KEY(ID), FOREIGN KEY(weaponID) references items(ID))");	
+							+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(itemID) references items(ID))");	
+		//Body table (Players equiped items)
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS body(ID int(11) AUTO_INCREMENT,playerID varchar(255), headID int(11) ,"
+							+ "chestID int(11) ,pantsID int(11) , bootsID int(11), weaponID int(11) , "
+							+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(headID) references items(ID)"
+							+ ", FOREIGN KEY(chestID) references items(ID), FOREIGN KEY(pantsID) references items(ID)"
+							+ ", FOREIGN KEY(bootsID) references items(ID), PRIMARY KEY(ID), FOREIGN KEY(weaponID) references items(ID))");	
+		//Ongoing table for Pve fights.
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS fights(ID int(11) AUTO_INCREMENT,playerID varchar(255), PRIMARY KEY(ID))");	
+		//Player stats table
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS playerstats(playerID varchar(255), health DOUBLE PRECISION, strength DOUBLE PRECISION, "
+				           + "intelligence DOUBLE PRECISION, dexterity DOUBLE PRECISION, blockchance DOUBLE PRECISION, luck DOUBLE PRECISION, "
+				           + "PRIMARY KEY(playerID), FOREIGN KEY(playerID) references players(ID))");	
 	}
 	
 

@@ -1,4 +1,4 @@
-package martacus.mart.bot.rpg;
+package martacus.mart.bot.rpg.player;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -12,7 +12,6 @@ import sx.blah.discord.api.MissingPermissionsException;
 import sx.blah.discord.handle.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IMessage;
-import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.HTTP429Exception;
 import sx.blah.discord.util.MessageBuilder;
 
@@ -25,7 +24,6 @@ public class InventoryHandler {
 		String message = m.toString();
 		String[] messagesplit = message.split(" ");
 		String userId = m.getAuthor().getID();
-		IUser user = m.getAuthor();
 		if(m.getContent().startsWith("[inventory")){
 			showInventory(userId, event);
 		}
@@ -134,30 +132,34 @@ public class InventoryHandler {
 	}
 	
 	void addItemToBody(String userId, MessageReceivedEvent event, int id) throws HTTP429Exception, DiscordException, MissingPermissionsException{
-		Statement state;
-		ResultSet result;
+		String sql = "SELECT ItemType FROM items WHERE ID=?";
+		PreparedStatement state;
+		Statement state2;
 		try {
-			state = Main.conn.createStatement();
-			result = state.executeQuery("SELECT ItemType FROM items WHERE ID=" + id +"");
+			state = Main.conn.prepareStatement(sql);
+			state2 = Main.conn.createStatement();
+			state.setInt(1, id);
+			ResultSet result = state.executeQuery();
 			while(result.next()){
 				String type = result.getString("ItemType");
 				if(type.equals("Head")){
-					state.executeUpdate("UPDATE body SET headID="+id+" WHERE playerID='"+userId+"'");
+					state2.executeUpdate("UPDATE body SET headID="+id+" WHERE playerID='"+userId+"'");
 				}
 				if(type.equals("Chest")){
-					state.executeUpdate("UPDATE body SET chestID="+id+" WHERE playerID='"+userId+"'");
+					state2.executeUpdate("UPDATE body SET chestID="+id+" WHERE playerID='"+userId+"'");
 				}
 				if(type.equals("Pants")){
-					state.executeUpdate("UPDATE body SET pantsID="+id+" WHERE playerID='"+userId+"'");
+					state2.executeUpdate("UPDATE body SET pantsID="+id+" WHERE playerID='"+userId+"'");
 				}
 				if(type.equals("Boots")){
-					state.executeUpdate("UPDATE body SET bootsID="+id+" WHERE playerID='"+userId+"'");
+					state2.executeUpdate("UPDATE body SET bootsID="+id+" WHERE playerID='"+userId+"'");
 				}
 				if(type.equals("Melee")||type.equals("Magic")||type.equals("Ranged")){
-					state.executeUpdate("UPDATE body SET weaponID="+id+" WHERE playerID='"+userId+"'");
+					state2.executeUpdate("UPDATE body SET weaponID="+id+" WHERE playerID='"+userId+"'");
 				}
 				sendMessage("Item equipped!",event);
 			}
+			result.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
