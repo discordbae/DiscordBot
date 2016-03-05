@@ -38,10 +38,15 @@ public class FightingHandler {
 			}
 			else{
 				if(!isFightOngoing(userId)){
-					int level = Integer.parseInt(messagesplit[1]);
-					Monster mons = new Monster(level, userId);
-					monsters.add(mons);
-					newFight(mons, userId, event);
+					if(Integer.parseInt(messagesplit[1]) >= 1){
+						int level = Integer.parseInt(messagesplit[1]);
+						Monster mons = new Monster(level, userId);
+						monsters.add(mons);
+						newFight(mons, userId, event);
+					}
+					else{
+						sendMessage("This would only get you negative xp, and items will be lvl 1. You sure?", event);
+					}
 				}
 				else{
 					sendMessage("You are already fighting!", event);
@@ -52,7 +57,6 @@ public class FightingHandler {
 			if(isFightOngoing(userId)){
 				m.delete();
 				attackMonster(userId, event);
-				attackPlayer(userId, event);
 			}
 			else{
 				sendMessage("No fight going bluh succer", event);
@@ -63,6 +67,14 @@ public class FightingHandler {
 	public void sendMessage(String message, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
 		String sender = event.getMessage().getAuthor().toString();
 		new MessageBuilder(Main.pub).appendContent(sender+"\n").appendContent(message).withChannel(event.getMessage().getChannel()).build();
+	}
+	
+	public void sendAttackMessage(MessageReceivedEvent event, double playerdamage, double playerhp, double monsterdamage, double monsterhp) throws 
+	HTTP429Exception, DiscordException, MissingPermissionsException{
+		String sender = event.getMessage().getAuthor().toString();
+		new MessageBuilder(Main.pub).appendContent(sender+"\n").appendContent("``Damage done: " + playerdamage + " | Monster HP: " + monsterhp)
+		.appendContent(" | Damage Taken: " + monsterdamage + " | Player HP: " + playerhp + "``")
+		.withChannel(event.getMessage().getChannel()).build();
 	}
 	
 	public double roundDouble(double number){
@@ -101,42 +113,50 @@ public class FightingHandler {
 		return false;
 	}
 	
-	void attackMonster(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
+	void attackMonster(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
 		double damage = getPlayerDamage(userId, event);
 		for(Monster s : monsters){
 			if(s.getOpponent().equals(userId)){
 				double hp = s.getHealth() - damage;
 				hp = roundDouble(hp);
 				s.setHealth(hp);
-				sendMessage("Damage done: " + damage + "\nMonster HP: " + hp, event);
 				checkMonsterHealth(userId, event);
+				attackPlayer(userId, event, damage, hp);
 			}
 		}
 	}
 	
-	void attackPlayer(String userId, MessageReceivedEvent event) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
+	void attackPlayer(String userId, MessageReceivedEvent event, double playerDamage, double monsterHp) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
 		double damage = getMonsterDamage(userId);
 		double randomValue = 0.9 + (1.1 - 0.9) * rand.nextDouble();
 		damage *= randomValue;
-		setPlayerHealth(userId, damage, event);
+		setPlayerHealth(userId, damage, event, playerDamage, monsterHp);
 	}
 	
-	void setPlayerHealth(String userId, double damage, MessageReceivedEvent event) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
+	void setPlayerHealth(String userId, double damage, MessageReceivedEvent event, double playerDamage, double monsterHp) throws HTTP429Exception, DiscordException, MissingPermissionsException{
 		String sql = "SELECT health FROM playerstats WHERE playerID=?";
-		String sql2 = "UPDATE playerstats SET health=? WHERE ID=?";
-		PreparedStatement state = Main.conn.prepareStatement(sql);
-		PreparedStatement state2 = Main.conn.prepareStatement(sql2);
-		state.setString(1, userId);
-		state2.setString(2, userId);
-		ResultSet res = state.executeQuery();
-		while(res.next()){
-			double health = res.getDouble("health");
-			damage = roundDouble(damage);
-			health -= damage;
-			health = roundDouble(health);
-			state2.setDouble(1, health);
-			sendMessage("Damage Taken: " + damage + "\nMonster HP: " + health, event);
+		String sql2 = "UPDATE playerstats SET health=? WHERE playerID=?";
+		PreparedStatement state;
+		try {
+			state = Main.conn.prepareStatement(sql);
+			PreparedStatement state2 = Main.conn.prepareStatement(sql2);
+			state.setString(1, userId);
+			state2.setString(2, userId);
+			ResultSet res = state.executeQuery();
+			while(res.next()){
+				double health = res.getDouble("health");
+				damage = roundDouble(damage);
+				health -= damage;
+				health = roundDouble(health);
+				state2.setDouble(1, health);
+				state2.executeUpdate();
+				sendAttackMessage(event, playerDamage, health, damage, monsterHp);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+
 	}
 	
 	double getPlayerDamage(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{

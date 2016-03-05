@@ -10,7 +10,7 @@ public class Monster {
 	
 	Monster(int lvl, String oppon){
 		setLevel(lvl);
-		setHealth(lvl * 20);
+		setHealth(lvl * 15);
 		setDamage(lvl * 5);
 		setOpponent(oppon);
 		setArmor(lvl*1);

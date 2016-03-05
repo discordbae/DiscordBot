@@ -10,6 +10,7 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import martacus.mart.bot.rpg.fightsystem.FightingHandler;
+import martacus.mart.bot.rpg.fightsystem.LevelingHandler;
 import martacus.mart.bot.rpg.player.InventoryHandler;
 import martacus.mart.bot.rpg.player.ItemMessageHandler;
 import martacus.mart.bot.rpg.player.PlayerMessageHandler;
@@ -76,6 +77,9 @@ public class Main {
 							+ ", FOREIGN KEY(bootsID) references items(ID), PRIMARY KEY(ID), FOREIGN KEY(weaponID) references items(ID))");	
 		//Ongoing table for Pve fights.
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS fights(ID int(11) AUTO_INCREMENT,playerID varchar(255), PRIMARY KEY(ID))");	
+		//All items
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS items(ID int(11) AUTO_INCREMENT,name varchar(255),itemtype varchar(255),"
+				+ "rating int(11), PRIMARY KEY(ID))");	
 		//Player stats table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS playerstats(playerID varchar(255), health DOUBLE PRECISION, strength DOUBLE PRECISION, "
 				           + "intelligence DOUBLE PRECISION, dexterity DOUBLE PRECISION, blockchance DOUBLE PRECISION, luck DOUBLE PRECISION, "
