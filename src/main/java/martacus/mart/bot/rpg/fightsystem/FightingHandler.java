@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Random;
 
 import martacus.mart.bot.Main;
+import martacus.mart.bot.rpg.SQLGet;
 import sx.blah.discord.api.DiscordException;
 import sx.blah.discord.api.MissingPermissionsException;
 import sx.blah.discord.handle.EventSubscriber;
@@ -37,7 +38,7 @@ public class FightingHandler {
 				return;
 			}
 			else{
-				if(!isFightOngoing(userId)){
+				if(!SQLGet.isFightOngoing(userId)){
 					if(Integer.parseInt(messagesplit[1]) >= 1){
 						int level = Integer.parseInt(messagesplit[1]);
 						Monster mons = new Monster(level, userId);
@@ -54,7 +55,7 @@ public class FightingHandler {
 			}
 		}
 		if(m.getContent().startsWith("[attack")){
-			if(isFightOngoing(userId)){
+			if(SQLGet.isFightOngoing(userId)){
 				m.delete();
 				attackMonster(userId, event);
 			}
@@ -84,33 +85,9 @@ public class FightingHandler {
 	}
 	
 	
-	void newFight(Monster mon, String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
-		String sql = "INSERT INTO fights(playerID) VALUES(?)";
-		try {
-			PreparedStatement state = Main.conn.prepareStatement(sql);
-			state.setString(1, userId);
-			state.executeUpdate();
-			sendMessage("Fight started! Attack!", event);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	boolean isFightOngoing(String userId){
-		String sql = "SELECT playerID FROM fights";
-		try {
-			PreparedStatement state = Main.conn.prepareStatement(sql);
-			ResultSet rslt = state.executeQuery();
-			while(rslt.next()){
-				String id = rslt.getString("playerID");
-				if(id.equals(userId)){
-					return true;
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
+	void newFight(Monster mon, String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
+		SQLGet.addFight(userID);
+		sendMessage("Fight started! Attack!", event);
 	}
 	
 	void attackMonster(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
@@ -133,44 +110,21 @@ public class FightingHandler {
 		setPlayerHealth(userId, damage, event, playerDamage, monsterHp);
 	}
 	
-	void setPlayerHealth(String userId, double damage, MessageReceivedEvent event, double playerDamage, double monsterHp) throws HTTP429Exception, DiscordException, MissingPermissionsException{
-		String sql = "SELECT health FROM playerstats WHERE playerID=?";
-		String sql2 = "UPDATE playerstats SET health=? WHERE playerID=?";
-		PreparedStatement state;
-		try {
-			state = Main.conn.prepareStatement(sql);
-			PreparedStatement state2 = Main.conn.prepareStatement(sql2);
-			state.setString(1, userId);
-			state2.setString(2, userId);
-			ResultSet res = state.executeQuery();
-			while(res.next()){
-				double health = res.getDouble("health");
-				damage = roundDouble(damage);
-				health -= damage;
-				health = roundDouble(health);
-				state2.setDouble(1, health);
-				state2.executeUpdate();
-				sendAttackMessage(event, playerDamage, health, damage, monsterHp);
-			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+	void setPlayerHealth(String userID, double damage, MessageReceivedEvent event, double playerDamage, double monsterHp) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
+		double health = SQLGet.getPlayerStat(userID, "health");
+		damage = roundDouble(damage);
+		health -= damage;
+		health = roundDouble(health);
+		SQLGet.setPlayerHealth(health, userID);
+		sendAttackMessage(event, playerDamage, health, damage, monsterHp);
 	}
 	
-	double getPlayerDamage(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
+	double getPlayerDamage(String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
 		String sql = "SELECT weaponID FROM body WHERE playerID=?";
-		String sql2 = "SELECT Rating FROM items WHERE ID=?";
-		String sql3 = "SELECT strength FROM playerstats WHERE playerID=?";
 		try {
 			PreparedStatement state = Main.conn.prepareStatement(sql);
-			PreparedStatement state2 = Main.conn.prepareStatement(sql2);
-			PreparedStatement state3 = Main.conn.prepareStatement(sql3);
-			state.setString(1, userId);
-			state3.setString(1, userId);
+			state.setString(1, userID);
 			ResultSet results = state.executeQuery();
-			ResultSet results3 = state3.executeQuery();
 			if (!results.next() ) {
 				sendMessage("You dont have an item equipped! You give him a punch!", event);
 				return 1;
@@ -178,19 +132,13 @@ public class FightingHandler {
 			results.absolute(0);
 			while(results.next()){
 				int id = results.getInt("weaponID");
-				state2.setInt(1, id);
-				ResultSet results2 = state2.executeQuery();
-				while(results2.next()){
-					double damage = results2.getDouble("Rating");
-					while(results3.next()){
-						double strength = results3.getDouble("strength");
-						double randomValue = 0.9 + (1.1 - 0.9) * rand.nextDouble();
-						damage *= randomValue;
-						damage *= strength;
-						damage = roundDouble(damage);
-						return damage;
-					}
-				}
+				double damage = SQLGet.getItemRating(id);
+				double strength = SQLGet.getPlayerStat(userID, "strength");
+				double randomValue = 0.9 + (1.1 - 0.9) * rand.nextDouble();
+				damage *= randomValue;
+				damage *= strength;
+				damage = roundDouble(damage);
+				return damage;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -208,33 +156,17 @@ public class FightingHandler {
 		return 1.2;
 	}
 	
-	void checkMonsterHealth(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
+	void checkMonsterHealth(String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
 		for(Monster s : monsters){
-			if(s.getOpponent().equals(userId)){
+			if(s.getOpponent().equals(userID)){
 				if(s.getHealth() <= 0){
 					double xp = s.getLevel() * 10;
 					sendMessage("You defeated the monster! Here is your reward: " + xp + "xp", event);
 					monsters.remove(s);
-					try {
-						addExp(userId, xp);
-						String sql = "DELETE FROM fights WHERE playerID=?";
-						PreparedStatement state = Main.conn.prepareStatement(sql);
-						state.setString(1, userId);
-						state.executeUpdate();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
+					SQLGet.addExp(userID, xp);
+					SQLGet.delFight(userID);
 				}
 			}
 		}
-	}
-	
-	public void addExp(String userId, double xp) throws SQLException{
-		String sql = "UPDATE players SET Exp=Exp + ? WHERE ID=?";
-		PreparedStatement state = Main.conn.prepareStatement(sql);
-		state.setDouble(1, xp);
-		state.setString(2, userId);
-		state.executeUpdate();
-		
 	}
 }

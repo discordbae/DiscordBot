@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
+import martacus.mart.bot.rpg.SQLGet;
 import martacus.mart.bot.rpg.fightsystem.FightingHandler;
 import martacus.mart.bot.rpg.fightsystem.LevelingHandler;
 import martacus.mart.bot.rpg.player.InventoryHandler;
@@ -59,16 +60,18 @@ public class Main {
 		dispatcher.registerListener(new FightingHandler());
 
 	    connect();
+	    int id = SQLGet.getBodyItemID("126388826561183745", "headID");
+	    System.out.println(id);
 	}
 	
 	public static void connect() throws SQLException{
 		conn = DriverManager.getConnection("jdbc:mysql://localhost/discordrpg?user=root&password=");
 		Statement state = conn.createStatement();
 		//Player table
-		state.executeUpdate("CREATE TABLE IF NOT EXISTS players(ID varchar(255), level int, exp double, PRIMARY KEY(ID))");	
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS players(ID varchar(255), PRIMARY KEY(ID))");	
 		//Inventory table
-		state.executeUpdate("CREATE TABLE IF NOT EXISTS inventory(playerID varchar(255), itemID int(11) , "
-							+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(itemID) references items(ID))");	
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS inventory(ID int(11) AUTO_INCREMENT, playerID varchar(255), itemID int(11) , "
+							+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(itemID) references items(ID), PRIMARY KEY(ID))");	
 		//Body table (Players equiped items)
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS body(ID int(11) AUTO_INCREMENT,playerID varchar(255), headID int(11) ,"
 							+ "chestID int(11) ,pantsID int(11) , bootsID int(11), weaponID int(11) , "
@@ -81,8 +84,10 @@ public class Main {
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS items(ID int(11) AUTO_INCREMENT,name varchar(255),itemtype varchar(255),"
 				+ "rating int(11), PRIMARY KEY(ID))");	
 		//Player stats table
-		state.executeUpdate("CREATE TABLE IF NOT EXISTS playerstats(playerID varchar(255), health DOUBLE PRECISION, strength DOUBLE PRECISION, "
-				           + "intelligence DOUBLE PRECISION, dexterity DOUBLE PRECISION, blockchance DOUBLE PRECISION, luck DOUBLE PRECISION, "
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS playerstats(playerID varchar(255), health DOUBLE PRECISION, level int(11), "
+						   + "exp DOUBLE PRECISION, strength DOUBLE PRECISION, "
+				           + "intelligence DOUBLE PRECISION, dexterity DOUBLE PRECISION, blockchance DOUBLE PRECISION, "
+				           + "luck DOUBLE PRECISION, class varchar(255), "
 				           + "PRIMARY KEY(playerID), FOREIGN KEY(playerID) references players(ID))");	
 	}
 	

@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import martacus.mart.bot.Main;
+import martacus.mart.bot.rpg.SQLGet;
+import martacus.mart.bot.rpg.fightsystem.LevelingHandler;
 import martacus.mart.bot.rpg.fightsystem.PlayerStats;
 import sx.blah.discord.api.DiscordException;
 import sx.blah.discord.api.MissingPermissionsException;
@@ -41,7 +43,7 @@ public class PlayerMessageHandler  {
 					.appendContent("[join - Joins the game",i).appendContent("\n")
 					.appendContent("[setclass [class] - Set the desired classes: Warrior, Ranger, Mage",i).appendContent("\n")
 					.appendContent("[stats -  Check out your current stats",i).appendContent("\n")
-					.appendContent("[char - Shows info about your character",i).appendContent("\n")
+					.appendContent("[character - Shows info about your character",i).appendContent("\n")
 					.appendContent("[inventory - Shows the items in your inventory",i).appendContent("\n")
 					.appendContent("[equip [item name] - Equips the item",i).appendContent("\n")
 					.appendContent("[fight [monster level] - Fight a monster of the desired level",i).appendContent("\n")
@@ -56,8 +58,9 @@ public class PlayerMessageHandler  {
 			Player player = new Player(userId, 1, 0.0);
 			newPlayer(player, userId, event, user);
 		}
-		if(m.getContent().startsWith("[char")){
+		if(m.getContent().startsWith("[character")){
 			getCharacter(userId, user, event);
+			LevelingHandler.checkLevelUp(userId);
 		}
 		if(m.getContent().startsWith("[setclass")){
 			if(messagesplit.length != 2){
@@ -106,33 +109,33 @@ public class PlayerMessageHandler  {
 		//Add player
 		try {
 			Statement state = Main.conn.createStatement();
-			state.executeUpdate("INSERT INTO players(ID, level, exp) VALUES('" + id + "', " + level + ", " + exp + ")");
+			state.executeUpdate("INSERT INTO players(ID) VALUES('" + id + "')");
 			state.executeUpdate("INSERT INTO body(playerID) VALUES('" + id + "')");
-			state.executeUpdate("INSERT INTO playerstats(playerID, health, strength, intelligence, dexterity, blockchance, luck) "
-								+ "VALUES('" + id + "',100,1,1,1,1,1)");
+			state.executeUpdate("INSERT INTO playerstats(playerID, health, level, exp, strength, intelligence, dexterity, blockchance, luck) "
+								+ "VALUES('" + id + "',100,1,0,1,1,1,1,1)");
 			sendMessage("Welcome adventurer!", event);
 			state.close();
 		} catch(SQLException e) { e.printStackTrace();}
 	}
 
-	void getCharacter(String userId, IUser user, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, 
-	MissingPermissionsException{
+	void getCharacter(String userID, IUser user, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, 
+	MissingPermissionsException, SQLException{
 		ResultSet results = null;
-		int level = 0;
-		double xp = 0;
-		String classs = null;
-		try {
-			Statement state = Main.conn.createStatement();
-			results = state.executeQuery("SELECT Level, Exp, Class FROM players WHERE ID='"+ userId +"'");	
-			while(results.next()){
-				level = results.getInt("Level");
-				xp = results.getDouble("Exp");
-				classs = results.getString("Class");
-			}
-			new MessageBuilder(Main.pub).appendContent(user + "\n").appendContent("Level: " + level + "\nXp: " + xp + "\nClass: " + classs + "")
+		double level = SQLGet.getPlayerStat(userID, "level");
+		double exp = SQLGet.getPlayerStat(userID, "exp");
+		double health = SQLGet.getPlayerStat(userID, "health");
+		double strength = SQLGet.getPlayerStat(userID, "strength");
+		double intelligence = SQLGet.getPlayerStat(userID, "intelligence");
+		double dexterity = SQLGet.getPlayerStat(userID, "dexterity");
+		double blockchance = SQLGet.getPlayerStat(userID, "blockchance");
+		double luck = SQLGet.getPlayerStat(userID, "luck");
+		String classs = SQLGet.GetClass(userID);
+			new MessageBuilder(Main.pub).appendContent(user + "		" + classs + "\n")
+			.appendContent("Level: " + level + "\t\t\tXp: " + exp)
+			.appendContent("\nStr: " + strength + "\t\t\tBlockchance: " + blockchance)
+			.appendContent("\nInt: " + intelligence + "\t\t\tLuck: " + luck)
+			.appendContent("\nDex: " + dexterity)
 			.withChannel(event.getMessage().getChannel()).build();
-			state.close();
-		} catch (SQLException e) {e.printStackTrace();}
 		
 	}
 	
@@ -141,26 +144,26 @@ public class PlayerMessageHandler  {
 	MissingPermissionsException{
 		Statement state = Main.conn.createStatement();
 		ResultSet results = null;
-		results = state.executeQuery("SELECT Class FROM players WHERE ID='"+ userId +"'");
+		results = state.executeQuery("SELECT class FROM playerstats WHERE playerID='"+ userId +"'");
 		if (results.next()) {
 		    String s = results.getString("Class");
 		    if (results.wasNull()) {}else{sendMessage("You have already chosen a class!", event);return;}
 		}
 		if(array[1].equals("Warrior")){
-			state.executeUpdate("UPDATE players SET Class='"+ array[1] +"' WHERE ID='" + userId +"'");
+			state.executeUpdate("UPDATE playerstats SET class='"+ array[1] +"' WHERE playerID='" + userId +"'");
 			sendMessage("Class Set!", event); giveClassItem(array[1], userId);
 		}
 		else if(array[1].equals("Mage")){
-			state.executeUpdate("UPDATE players SET Class='"+ array[1] +"' WHERE ID='" + userId +"'");
+			state.executeUpdate("UPDATE playerstats SET class='"+ array[1] +"' WHERE playerID='" + userId +"'");
 			sendMessage("Class Set!", event); giveClassItem(array[1], userId);
 		}
 		else if(array[1].equals("Ranger")){
-			state.executeUpdate("UPDATE players SET Class='"+ array[1] +"' WHERE ID='" + userId +"'");
+			state.executeUpdate("UPDATE playerstats SET class='"+ array[1] +"' WHERE playerID='" + userId +"'");
 			sendMessage("Class Set!", event); giveClassItem(array[1], userId);
 		}
 		else if(array[1].equals("DemonicAngel")){
 			if(userId.equals("131414719666847745")){
-				state.executeUpdate("UPDATE players SET Class='"+ array[1] +"' WHERE ID='" + userId +"'");
+				state.executeUpdate("UPDATE playerstats SET class='"+ array[1] +"' WHERE playerID='" + userId +"'");
 				sendMessage("Class Set!", event); giveClassItem(array[1], userId);
 			}
 			else{
@@ -173,23 +176,29 @@ public class PlayerMessageHandler  {
 		state.close();
 	}
 	
-	void giveClassItem(String classs, String userId) throws SQLException{
-		Statement state = Main.conn.createStatement();
-		if(classs.equals("Warrior")){
-			state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 1)");
+	void giveClassItem(String classs, String userId){
+		Statement state;
+		try {
+			state = Main.conn.createStatement();
+			if(classs.equals("Warrior")){
+				state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 1)");
+			}
+			if(classs.equals("Mage")){
+				state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 2)");
+			}
+			if(classs.equals("Ranger")){
+				state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 3)");
+			}
+			if(classs.equals("DemonicAngel")){
+				state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 1)");
+				state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 2)");
+				state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 3)");
+			}
+			state.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
-		if(classs.equals("Mage")){
-			state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 2)");
-		}
-		if(classs.equals("Ranger")){
-			state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 3)");
-		}
-		if(classs.equals("DemonicAngel")){
-			state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 1)");
-			state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 2)");
-			state.executeUpdate("INSERT INTO inventory(playerID, itemID) VALUES('"+userId+"', 3)");
-		}
-		state.close();
+
 	}
 	
 	

@@ -5,8 +5,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import martacus.mart.bot.Main;
+import martacus.mart.bot.rpg.SQLGet;
 import sx.blah.discord.api.DiscordException;
 import sx.blah.discord.api.MissingPermissionsException;
 import sx.blah.discord.handle.EventSubscriber;
@@ -67,43 +69,23 @@ public class InventoryHandler {
 			sendMessage(invent, event);		
 	}
 	
-	void equipItem(String item, String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
-		String sql = "SELECT ID FROM items WHERE name=?";
-		String sql2 = "SELECT itemID FROM inventory WHERE playerID=?";
-		String sql3 = "SELECT weaponID FROM body WHERE playerID=?";
-		PreparedStatement state = Main.conn.prepareStatement(sql);
-		PreparedStatement state2 = Main.conn.prepareStatement(sql2);
-		PreparedStatement state3 = Main.conn.prepareStatement(sql3);
-		state.setString(1, item);
-		state2.setString(1, userId);
-		state3.setString(1, userId);
-		ResultSet results = state.executeQuery();
-		ResultSet invitems = state2.executeQuery();
-		ResultSet equipeditem = state3.executeQuery();
-		if (!results.next() ) {
-			sendMessage("This item doesnt exist!", event);
-			return;
-		}
-		results.absolute(0);
-		while(results.next()){
-			int id = results.getInt("ID");
-			while(invitems.next()){
-				int id2 = invitems.getInt("itemID");
-				if(id == id2){
-					addItemToBody(userId, event, id2);
-					//state.close(); state2.close(); results.close(); invitems.close();
-					equipeditem.absolute(0);
-					deleteItemFromInv(userId, event, id2);
-					while(equipeditem.next()){
-						int id3 = equipeditem.getInt("weaponID");
-						addItemToInv(userId, event, id3);
-					}
-					return;
+	void equipItem(String item, String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
+		int itemID = SQLGet.getItemsItemID(item);
+		List<Integer> list = SQLGet.getInventoryItemsID(userID);
+		for(int e : list){
+			if(itemID == e){
+				int id3 = SQLGet.getBodyItemID(userID, "weaponID");
+				if (id3 == 0) {}
+				else{
+					addItemToInv(userID, event, id3);
 				}
+				addItemToBody(userID, event, e);
+				//state.close(); state2.close(); results.close(); invitems.close();
+				deleteItemFromInv(userID, event, e);
+				return;
 			}
-			sendMessage("You dont have the item!",event);
-		
-		}	
+		}
+		sendMessage("You dont have the item!",event);
 	}
 	
 	void deleteItemFromInv(String userId, MessageReceivedEvent event, int id){

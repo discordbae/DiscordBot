@@ -1,19 +1,26 @@
 package martacus.mart.bot.rpg.fightsystem;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import java.sql.SQLException;
+
+import martacus.mart.bot.rpg.SQLGet;
+
 
 public class LevelingHandler {
 	
-	public void checkLevelUp(String userId, MessageReceivedEvent event){
-		
+	public static void checkLevelUp(String userId) throws SQLException{
+		double level = SQLGet.getPlayerStat(userId, "level");
 	}
 	
-	public static void calcXpNeeded(int level){
-		int levels = 100;
-	    int xp_for_first_level = 50;
-	    long experience = (long) ((float)xp_for_first_level*(Math.pow(1.2, level)));
-	    experience = Math.round(experience);
-	    System.out.println(experience);
+	
+	public static double experienceForLevel(int level)
+	{
+		double total = 0;
+		for (int i = 1; i < level; i++)
+		{
+			total += Math.floor(i + 200 * Math.pow(2, i / 8.0));
+		}
+
+		return Math.floor(total / 4);
 	}
 
 }
