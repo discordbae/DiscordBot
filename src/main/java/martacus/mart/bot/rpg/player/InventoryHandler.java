@@ -69,23 +69,28 @@ public class InventoryHandler {
 			sendMessage(invent, event);		
 	}
 	
-	void equipItem(String item, String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
-		int itemID = SQLGet.getItemsItemID(item);
-		List<Integer> list = SQLGet.getInventoryItemsID(userID);
-		for(int e : list){
-			if(itemID == e){
-				int id3 = SQLGet.getBodyItemID(userID, "weaponID");
-				if (id3 == 0) {}
-				else{
-					addItemToInv(userID, event, id3);
+	void equipItem(String item, String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
+		try {
+			int itemID = SQLGet.getItemsItemID(item);
+			List<Integer> list = SQLGet.getInventoryItemsID(userID);
+			for(int e : list){
+				if(itemID == e){
+					int id3 = SQLGet.getBodyItemID(userID, "weaponID");
+					if (id3 == 0) {}
+					else{
+						addItemToInv(userID, event, id3);
+					}
+					addItemToBody(userID, event, e);
+					//state.close(); state2.close(); results.close(); invitems.close();
+					deleteItemFromInv(userID, event, e);
+					return;
 				}
-				addItemToBody(userID, event, e);
-				//state.close(); state2.close(); results.close(); invitems.close();
-				deleteItemFromInv(userID, event, e);
-				return;
 			}
+			sendMessage("You dont have the item!",event);
+		} catch (SQLException e1) {
+			e1.printStackTrace();
 		}
-		sendMessage("You dont have the item!",event);
+		
 	}
 	
 	void deleteItemFromInv(String userId, MessageReceivedEvent event, int id){

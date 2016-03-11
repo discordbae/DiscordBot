@@ -91,59 +91,46 @@ public class FightingHandler {
 	}
 	
 	void attackMonster(String userId, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
-		double damage = getPlayerDamage(userId, event);
+		double playerDamage = getPlayerDealtDamage(userId, event);
 		for(Monster s : monsters){
 			if(s.getOpponent().equals(userId)){
-				double hp = s.getHealth() - damage;
+				double hp = s.getHealth() - playerDamage;
 				hp = roundDouble(hp);
 				s.setHealth(hp);
 				checkMonsterHealth(userId, event);
-				attackPlayer(userId, event, damage, hp);
+				attackPlayer(userId, event, playerDamage, hp);
 			}
 		}
 	}
 	
 	void attackPlayer(String userId, MessageReceivedEvent event, double playerDamage, double monsterHp) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
-		double damage = getMonsterDamage(userId);
+		double monsterDamage = getMonsterDamage(userId);
+		double randomValue = 0.9 + (1.1 - 0.9) * rand.nextDouble();
+		monsterDamage *= randomValue;
+		setPlayerHealth(userId, monsterDamage, event, playerDamage, monsterHp);
+	}
+	
+	void setPlayerHealth(String userID, double monsterDamage, MessageReceivedEvent event, double playerDamage, double monsterHp) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
+		double playerHealth = SQLGet.getPlayerStat(userID, "health");
+		monsterDamage = roundDouble(monsterDamage);
+		playerHealth -= monsterDamage;
+		playerHealth = roundDouble(playerHealth);
+		SQLGet.setPlayerHealth(playerHealth, userID);
+		sendAttackMessage(event, playerDamage, playerHealth, monsterDamage, monsterHp);
+	}
+	
+	double getPlayerDealtDamage(String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException, SQLException{
+		int id = SQLGet.getBodyItemID(userID, "weaponID");
+		if (id == 0) {
+			sendMessage("You dont have an item equipped! You give him a punch!", event);
+		}
+		double damage = SQLGet.getItemRating(id);
+		double playerValue = getPlayerDamageStat(userID);
 		double randomValue = 0.9 + (1.1 - 0.9) * rand.nextDouble();
 		damage *= randomValue;
-		setPlayerHealth(userId, damage, event, playerDamage, monsterHp);
-	}
-	
-	void setPlayerHealth(String userID, double damage, MessageReceivedEvent event, double playerDamage, double monsterHp) throws SQLException, HTTP429Exception, DiscordException, MissingPermissionsException{
-		double health = SQLGet.getPlayerStat(userID, "health");
+		damage *= playerValue;
 		damage = roundDouble(damage);
-		health -= damage;
-		health = roundDouble(health);
-		SQLGet.setPlayerHealth(health, userID);
-		sendAttackMessage(event, playerDamage, health, damage, monsterHp);
-	}
-	
-	double getPlayerDamage(String userID, MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException{
-		String sql = "SELECT weaponID FROM body WHERE playerID=?";
-		try {
-			PreparedStatement state = Main.conn.prepareStatement(sql);
-			state.setString(1, userID);
-			ResultSet results = state.executeQuery();
-			if (!results.next() ) {
-				sendMessage("You dont have an item equipped! You give him a punch!", event);
-				return 1;
-			}
-			results.absolute(0);
-			while(results.next()){
-				int id = results.getInt("weaponID");
-				double damage = SQLGet.getItemRating(id);
-				double strength = SQLGet.getPlayerStat(userID, "strength");
-				double randomValue = 0.9 + (1.1 - 0.9) * rand.nextDouble();
-				damage *= randomValue;
-				damage *= strength;
-				damage = roundDouble(damage);
-				return damage;
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return 1.1;
+		return damage;
 	}
 	
 	double getMonsterDamage(String userId){
@@ -165,8 +152,30 @@ public class FightingHandler {
 					monsters.remove(s);
 					SQLGet.addExp(userID, xp);
 					SQLGet.delFight(userID);
+					LevelingHandler.checkLevelUp(userID, event);
 				}
 			}
 		}
+	}
+	
+	double getPlayerDamageStat(String userID) throws SQLException{
+		String playerClass = SQLGet.GetClass(userID);
+		if(playerClass.equals("Ranger")){
+			double dex = SQLGet.getPlayerStat(userID, "dexterity");
+			return dex;
+		}
+		if(playerClass.equals("Mage")){
+			double inte = SQLGet.getPlayerStat(userID, "intelligence");
+			return inte;
+		}
+		if(playerClass.equals("Warrior")){
+			double str = SQLGet.getPlayerStat(userID, "strength");
+			return str;
+		}
+		if(playerClass.equals("DemonicAngel")){
+			double str = SQLGet.getPlayerStat(userID, "strength");
+			return str;
+		}
+		return 0;
 	}
 }

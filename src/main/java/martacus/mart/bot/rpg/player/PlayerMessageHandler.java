@@ -55,12 +55,27 @@ public class PlayerMessageHandler  {
 			}
 		}
 		if(m.getContent().startsWith("[join")){
-			Player player = new Player(userId, 1, 0.0);
-			newPlayer(player, userId, event, user);
+			newPlayer(userId, event, user);
 		}
 		if(m.getContent().startsWith("[character")){
 			getCharacter(userId, user, event);
-			LevelingHandler.checkLevelUp(userId);
+		}
+		if(m.getContent().startsWith("[upstats")){
+			if(messagesplit.length != 3){
+				sendMessage("Invalid sub commands. Use: [upstats [stats] [amount of points]", event);
+				return;
+			}
+			else if(SQLGet.getStatpoints(userId) <= Integer.parseInt(messagesplit[2])){
+				sendMessage("You do not have enough stat points to do this!" + SQLGet.getStatpoints(userId), event);
+				return;
+			}
+			else if(messagesplit[1].equals("strength") || messagesplit[1].equals("dexterity") || messagesplit[1].equals("intelligence")){
+				SQLGet.upgradePlayerStats(userId, messagesplit[1], Integer.parseInt(messagesplit[2]));
+				sendMessage(messagesplit[2] + " points have been added to " + messagesplit[1], event);
+			}
+			else{
+				sendMessage("Stat doesnt exist!", event);
+			}
 		}
 		if(m.getContent().startsWith("[setclass")){
 			if(messagesplit.length != 2){
@@ -89,13 +104,9 @@ public class PlayerMessageHandler  {
 		new MessageBuilder(Main.pub).appendContent(sender+"\n").appendContent(message).withChannel(event.getMessage().getChannel()).build();
 	}
 	
-	void newPlayer(Player p, String userId, MessageReceivedEvent event, IUser user) throws SQLException, HTTP429Exception, 
+	void newPlayer(String userId, MessageReceivedEvent event, IUser user) throws SQLException, HTTP429Exception, 
 	DiscordException, MissingPermissionsException{
-		final String id = p.getID();
-		final int level = p.getLevel();
-		final double exp = p.getXp();
 		ResultSet results = null;
-		//See if player exists, if yes DIE
 		try{
 			Statement state = Main.conn.createStatement();
 			results = state.executeQuery("SELECT ID FROM players WHERE ID='"+ userId +"'");
@@ -109,10 +120,11 @@ public class PlayerMessageHandler  {
 		//Add player
 		try {
 			Statement state = Main.conn.createStatement();
-			state.executeUpdate("INSERT INTO players(ID) VALUES('" + id + "')");
-			state.executeUpdate("INSERT INTO body(playerID) VALUES('" + id + "')");
+			state.executeUpdate("INSERT INTO players(ID) VALUES('" + userId + "')");
+			state.executeUpdate("INSERT INTO body(playerID) VALUES('" + userId + "')");
 			state.executeUpdate("INSERT INTO playerstats(playerID, health, level, exp, strength, intelligence, dexterity, blockchance, luck) "
-								+ "VALUES('" + id + "',100,1,0,1,1,1,1,1)");
+								+ "VALUES('" + userId + "',100,1,0,1,1,1,1,1)");
+			state.executeUpdate("INSERT INTO currency(playerID, money, statpoints) VALUES('" + userId + "',0,0)");
 			sendMessage("Welcome adventurer!", event);
 			state.close();
 		} catch(SQLException e) { e.printStackTrace();}

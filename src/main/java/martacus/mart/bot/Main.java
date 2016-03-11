@@ -60,8 +60,6 @@ public class Main {
 		dispatcher.registerListener(new FightingHandler());
 
 	    connect();
-	    int id = SQLGet.getBodyItemID("126388826561183745", "headID");
-	    System.out.println(id);
 	}
 	
 	public static void connect() throws SQLException{
@@ -88,7 +86,9 @@ public class Main {
 						   + "exp DOUBLE PRECISION, strength DOUBLE PRECISION, "
 				           + "intelligence DOUBLE PRECISION, dexterity DOUBLE PRECISION, blockchance DOUBLE PRECISION, "
 				           + "luck DOUBLE PRECISION, class varchar(255), "
-				           + "PRIMARY KEY(playerID), FOREIGN KEY(playerID) references players(ID))");	
+				           + "PRIMARY KEY(playerID), FOREIGN KEY(playerID) references players(ID))");
+		//Currency table
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS currency(playerID varchar(255),money int(11),statpoints int(11), PRIMARY KEY(playerID))");
 	}
 	
 
