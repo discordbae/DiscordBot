@@ -2,8 +2,6 @@ package martacus.mart.bot.rpg.fightsystem;
 
 import java.io.IOException;
 import java.math.RoundingMode;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;

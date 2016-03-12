@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import java.util.Scanner;
 
 import martacus.mart.bot.rpg.SQLGet;
 import martacus.mart.bot.rpg.fightsystem.FightingHandler;
@@ -36,18 +37,24 @@ public class Main {
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws DiscordException, NetworkException, OAuthException, SQLException, IOException{
-		Properties obj = new Properties();
-		Gson gson = new Gson();
-		JsonReader reader = new JsonReader(new FileReader("C:\\Development\\Discord\\Spartacus\\details.txt"));
-		reader.beginObject();
-		while (reader.hasNext()) {
-			String name = reader.nextName();
-			if (name.equals("email")) {
-				email = reader.nextString();
-			} else if (name.equals("pass")) {
-				password = reader.nextString();
+	    Scanner in = new Scanner(System.in);
+	    String email = in.next();
+	    String password = in.next();
+	    in.close();
+	    if(email.equalsIgnoreCase("mart")){
+			Gson gson = new Gson();
+			JsonReader reader = new JsonReader(new FileReader("C:\\Development\\Discord\\Spartacus\\details.txt"));
+			reader.beginObject();
+			while (reader.hasNext()) {
+				String name = reader.nextName();
+				if (name.equals("email")) {
+					email = reader.nextString();
+				} else if (name.equals("pass")) {
+					password = reader.nextString();
+				}
 			}
-		}
+	    }
+
 
 		IDiscordClient client = new ClientBuilder().withLogin(email, password).build();
 		client.login();
