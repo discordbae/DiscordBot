@@ -149,34 +149,40 @@ public class SQLGet {
 	//Player stats Table
 	public static double getPlayerStat(String userID, String attribute) throws SQLException{
 		String sql = "";
-		switch(attribute){
-			case "level": sql = "SELECT level FROM playerstats WHERE playerID=?";
-						  PreparedStatement state = Main.conn.prepareStatement(sql);
-						    state.setString(1, userID);
-							ResultSet rslt = state.executeQuery();
-							while(rslt.next()){
-								int att = rslt.getInt(1);
-								state.close();
-								rslt.close();
-								return att;
-							}
-							break;
-			case "health":  sql = "SELECT health FROM playerstats WHERE playerID=?";
-							break;
-			case "exp":  sql = "SELECT exp FROM playerstats WHERE playerID=?";
-							break;
-			case "strength":  sql = "SELECT strength FROM playerstats WHERE playerID=?";
-							break;
-			case "intelligence":  sql = "SELECT intelligence FROM playerstats WHERE playerID=?";
-							break;
-			case "dexterity":  sql = "SELECT dexterity FROM playerstats WHERE playerID=?";
-							break;
-			case "blockchance":  sql = "SELECT blockchance FROM playerstats WHERE playerID=?";
-							break;
-			case "luck":  sql = "SELECT luck FROM playerstats WHERE playerID=?";
-							break;
-			default: break;
-			}
+		if(attribute.equals("level")){
+			sql = "SELECT level FROM playerstats WHERE playerID=?";
+			  PreparedStatement state = Main.conn.prepareStatement(sql);
+			    state.setString(1, userID);
+				ResultSet rslt = state.executeQuery();
+				while(rslt.next()){
+					int att = rslt.getInt(1);
+					state.close();
+					rslt.close();
+					return att;
+				}
+		}
+		if(attribute.equals("health")){
+			sql = "SELECT health FROM playerstats WHERE playerID=?";
+		}
+		if(attribute.equals("exp")){
+			sql = "SELECT exp FROM playerstats WHERE playerID=?";
+		}
+		if(attribute.equals("strength")){
+			sql = "SELECT strength FROM playerstats WHERE playerID=?";
+		}
+		if(attribute.equals("intelligence")){
+			sql = "SELECT intelligence FROM playerstats WHERE playerID=?";
+		}
+		if(attribute.equals("dexterity")){
+			sql = "SELECT dexterity FROM playerstats WHERE playerID=?";
+		}
+		if(attribute.equals("blockchance")){
+			sql = "SELECT blockchance FROM playerstats WHERE playerID=?";
+		}
+		if(attribute.equals("luck")){
+			sql = "SELECT luck FROM playerstats WHERE playerID=?";
+		}
+
 		PreparedStatement state = Main.conn.prepareStatement(sql);
 	    state.setString(1, userID);
 		ResultSet rslt= state.executeQuery();
