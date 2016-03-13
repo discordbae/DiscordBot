@@ -30,7 +30,7 @@ import com.google.gson.stream.JsonReader;
 @SuppressWarnings("unused")
 public class Main {
 	
-	private static String email, password;
+	private static String email, password, mysqlpassword;
 	public static IDiscordClient pub;
 	public static Connection conn = null;
 	static UserAgent myUserAgent = UserAgent.of("desktop", "martacus.mart.bot", "v0.1", "Martacus");
@@ -40,6 +40,7 @@ public class Main {
 	    Scanner in = new Scanner(System.in);
 	    String email = in.next();
 	    String password = in.next();
+	    String mysqlpassword = in.next();
 	    in.close();
 	    if(email.equalsIgnoreCase("mart")){
 			Gson gson = new Gson();
@@ -70,7 +71,7 @@ public class Main {
 	}
 	
 	public static void connect() throws SQLException{
-		conn = DriverManager.getConnection("jdbc:mysql://localhost/discordrpg?user=root&password=");
+		conn = DriverManager.getConnection("jdbc:mysql://localhost/discordrpg?user=root&password="+mysqlpassword);
 		Statement state = conn.createStatement();
 		//Player table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS players(ID varchar(255), PRIMARY KEY(ID))");	

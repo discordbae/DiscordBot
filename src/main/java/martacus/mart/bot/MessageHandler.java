@@ -4,6 +4,7 @@ import sx.blah.discord.api.DiscordException;
 import sx.blah.discord.api.MissingPermissionsException;
 import sx.blah.discord.handle.EventSubscriber;
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.HTTP429Exception;
 import sx.blah.discord.util.MessageBuilder;
@@ -11,6 +12,12 @@ import sx.blah.discord.util.MessageBuilder;
 public class MessageHandler {
 	
 	StrArrays str = new StrArrays();
+	
+	@EventSubscriber
+    public void handle(ReadyEvent event) {
+        System.out.println("RPG bot is deployed, start adventuring peepz!");
+        
+    }
 	
 	@EventSubscriber
 	 public void OnMesageEvent(MessageReceivedEvent event) throws HTTP429Exception, DiscordException, MissingPermissionsException {
