@@ -74,6 +74,9 @@ public class Main {
 		Statement state = conn.createStatement();
 		//Player table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS players(ID varchar(255), PRIMARY KEY(ID))");	
+		//All items
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS items(ID int(11) AUTO_INCREMENT,name varchar(255),itemtype varchar(255),"
+				+ "rating int(11), PRIMARY KEY(ID))");	
 		//Inventory table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS inventory(ID int(11) AUTO_INCREMENT, playerID varchar(255), itemID int(11) , "
 							+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(itemID) references items(ID), PRIMARY KEY(ID))");	
@@ -85,9 +88,7 @@ public class Main {
 							+ ", FOREIGN KEY(bootsID) references items(ID), PRIMARY KEY(ID), FOREIGN KEY(weaponID) references items(ID))");	
 		//Ongoing table for Pve fights.
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS fights(ID int(11) AUTO_INCREMENT,playerID varchar(255), PRIMARY KEY(ID))");	
-		//All items
-		state.executeUpdate("CREATE TABLE IF NOT EXISTS items(ID int(11) AUTO_INCREMENT,name varchar(255),itemtype varchar(255),"
-				+ "rating int(11), PRIMARY KEY(ID))");	
+
 		//Player stats table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS playerstats(playerID varchar(255), health DOUBLE PRECISION, level int(11), "
 						   + "exp DOUBLE PRECISION, strength DOUBLE PRECISION, "
