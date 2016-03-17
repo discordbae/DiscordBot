@@ -25,9 +25,9 @@ public class InventoryHandler {
 		IMessage m = event.getMessage();
 		String message = m.toString();
 		String[] messagesplit = message.split(" ");
-		String userId = m.getAuthor().getID();
+		String userID = m.getAuthor().getID();
 		if(m.getContent().startsWith("[inventory")){
-			showInventory(userId, event);
+			showInventory(userID, event);
 		}
 		if(m.getContent().startsWith("[equip")){
 			if(messagesplit.length != 2){
@@ -35,11 +35,15 @@ public class InventoryHandler {
 				return;
 			}
 			else{
-				equipItem(messagesplit[1], userId, event);
+				equipItem(messagesplit[1], userID, event);
 			}
 		}
 		if(m.getContent().startsWith("[body")){
-			showBody(userId, event);
+			showBody(userID, event);
+		}
+		if(m.getContent().startsWith("[money")){
+			int money = SQLGet.getMoney(userID);
+			sendMessage("You have " + money + " gold pieces.", event);
 		}
 	}
 	

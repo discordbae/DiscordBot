@@ -125,6 +125,7 @@ public class PlayerMessageHandler  {
 			state.executeUpdate("INSERT INTO playerstats(playerID, health, level, exp, strength, intelligence, dexterity, blockchance, luck) "
 								+ "VALUES('" + userId + "',100,1,0,1,1,1,1,1)");
 			state.executeUpdate("INSERT INTO currency(playerID, money, statpoints) VALUES('" + userId + "',0,0)");
+			state.executeUpdate("INSERT INTO skills(playerID, woodcutting, mining, farming, scavenging) VALUES('" + userId + "',0,0,0,0)");
 			sendMessage("Welcome adventurer!", event);
 			state.close();
 		} catch(SQLException e) { e.printStackTrace();}

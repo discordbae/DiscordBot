@@ -310,4 +310,34 @@ public class SQLGet {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void addMoney(String userID, int money){
+		try {
+			String sql = "UPDATE currency SET money=money + ? WHERE playerID=?";
+			PreparedStatement state = Main.conn.prepareStatement(sql);
+			state.setString(2, userID);
+			state.setInt(1, money);
+			state.executeUpdate();
+			state.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static int getMoney(String userID){
+		try {
+			String sql = "SELECT money FROM currency WHERE playerID=?";
+			PreparedStatement state = Main.conn.prepareStatement(sql);
+			state.setString(1, userID);
+			ResultSet resultname = state.executeQuery();
+			while(resultname.next()){
+				int money = resultname.getInt("money");
+				state.close(); resultname.close();
+				return money;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
 }

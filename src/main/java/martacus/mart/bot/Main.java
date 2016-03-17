@@ -1,18 +1,16 @@
 package martacus.mart.bot;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
+import java.util.Random;
 import java.util.Scanner;
 
-import martacus.mart.bot.rpg.SQLGet;
 import martacus.mart.bot.rpg.fightsystem.FightingHandler;
-import martacus.mart.bot.rpg.fightsystem.LevelingHandler;
+import martacus.mart.bot.rpg.jobs.JobHandler;
 import martacus.mart.bot.rpg.player.InventoryHandler;
 import martacus.mart.bot.rpg.player.ItemMessageHandler;
 import martacus.mart.bot.rpg.player.PlayerMessageHandler;
@@ -34,6 +32,8 @@ public class Main {
 	public static IDiscordClient pub;
 	public static Connection conn = null;
 	static UserAgent myUserAgent = UserAgent.of("desktop", "martacus.mart.bot", "v0.1", "Martacus");
+	
+	public static Random rand = new Random();
 	
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws DiscordException, NetworkException, OAuthException, SQLException, IOException{
@@ -65,8 +65,10 @@ public class Main {
 		dispatcher.registerListener(new ItemMessageHandler());
 		dispatcher.registerListener(new InventoryHandler());
 		dispatcher.registerListener(new FightingHandler());
+		dispatcher.registerListener(new JobHandler());
 
 	    connect();
+	    
 	}
 	
 	public static void connect() throws SQLException{
@@ -76,7 +78,7 @@ public class Main {
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS players(ID varchar(255), PRIMARY KEY(ID))");	
 		//All items
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS items(ID int(11) AUTO_INCREMENT,name varchar(255),itemtype varchar(255),"
-				+ "rating int(11), PRIMARY KEY(ID))");	
+				+ "rating int(11), PRIMARY KEY(ID))");	 
 		//Inventory table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS inventory(ID int(11) AUTO_INCREMENT, playerID varchar(255), itemID int(11) , "
 							+ "FOREIGN KEY(playerID) references players(ID), FOREIGN KEY(itemID) references items(ID), PRIMARY KEY(ID))");	
@@ -97,7 +99,9 @@ public class Main {
 				           + "PRIMARY KEY(playerID), FOREIGN KEY(playerID) references players(ID))");
 		//Currency table
 		state.executeUpdate("CREATE TABLE IF NOT EXISTS currency(playerID varchar(255),money int(11),statpoints int(11), PRIMARY KEY(playerID))");
+		//Skills table
+		state.executeUpdate("CREATE TABLE IF NOT EXISTS skills(playerID varchar(255), woodcutting int(11), mining int(11), "
+				+ "farming int(11), scavenging int(11), PRIMARY KEY(playerID))");
 	}
 	
-
 }
